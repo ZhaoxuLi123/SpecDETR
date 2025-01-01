@@ -1,0 +1,42 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="22">
+            <item index="0" class="java.lang.String" itemvalue="imagecorruptions" />
+            <item index="1" class="java.lang.String" itemvalue="interrogate" />
+            <item index="2" class="java.lang.String" itemvalue="mmtrack" />
+            <item index="3" class="java.lang.String" itemvalue="isort" />
+            <item index="4" class="java.lang.String" itemvalue="kwarray" />
+            <item index="5" class="java.lang.String" itemvalue="asynctest" />
+            <item index="6" class="java.lang.String" itemvalue="onnx" />
+            <item index="7" class="java.lang.String" itemvalue="xdoctest" />
+            <item index="8" class="java.lang.String" itemvalue="codecov" />
+            <item index="9" class="java.lang.String" itemvalue="flake8" />
+            <item index="10" class="java.lang.String" itemvalue="ubelt" />
+            <item index="11" class="java.lang.String" itemvalue="fairscale" />
+            <item index="12" class="java.lang.String" itemvalue="pytest" />
+            <item index="13" class="java.lang.String" itemvalue="emoji" />
+            <item index="14" class="java.lang.String" itemvalue="lightning" />
+            <item index="15" class="java.lang.String" itemvalue="hydra-core" />
+            <item index="16" class="java.lang.String" itemvalue="memory_profiler" />
+            <item index="17" class="java.lang.String" itemvalue="mmpose" />
+            <item index="18" class="java.lang.String" itemvalue="mmrazor" />
+            <item index="19" class="java.lang.String" itemvalue="parameterized" />
+            <item index="20" class="java.lang.String" itemvalue="mmcls" />
+            <item index="21" class="java.lang.String" itemvalue="mmrotate" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="pkl2json._" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
