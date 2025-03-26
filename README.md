@@ -77,7 +77,7 @@ The code is built upon mmdetection 3.0.0 and runs on the Ubuntu system.
     ```
     python train.py
     ```
-  Note: Although we have fixed all random seeds, there may still be slight differences in AP performance after retraining from scratch each time. This difference originates from the underlying mechanism of the mmdetection framework.
+  Note: Although we have fixed all random seeds, there may still be slight differences in AP performance after retraining from scratch each time. This difference originates from the underlying mechanism of CUDA.
 
 ## Citation
 
