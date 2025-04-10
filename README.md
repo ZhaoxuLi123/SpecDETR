@@ -18,7 +18,7 @@ The code is built upon mmdetection 3.0.0 and runs on the Ubuntu system.
 3. Install mmengine and mmcv.
     ```
     pip install mmengine==0.7.3
-    pip install mmcv==2.0.0
+    pip install mmcv>=2.0.0
     ```
    
 4. Clone this repository:
