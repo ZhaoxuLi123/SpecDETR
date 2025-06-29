@@ -24,7 +24,7 @@ except ImportError:
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Get a detector flops')
-    parser.add_argument('--config',default='./configs/specdetr_sb-2s-100e_hsi.py', help='train config file path')
+    parser.add_argument('--config',default='./configs/SpecDETR_SPOD_100e.py', help='train config file path')
     parser.add_argument(
         '--num-images',
         type=int,

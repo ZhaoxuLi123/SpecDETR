@@ -1,9 +1,8 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 # written by lzx
 
 import copy
 import os.path as osp
-from typing import List, Union
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 
 from mmengine.fileio import get_local_path
 
@@ -11,6 +10,7 @@ from mmdet.registry import DATASETS
 from mmdet.datasets.api_wrappers import COCO
 from mmdet.datasets.base_det_dataset import BaseDetDataset
 from mmdet.datasets.coco import CocoDataset
+from mmengine.utils import is_abs
 
 
 @DATASETS.register_module()
@@ -19,14 +19,87 @@ class IRAirDataset(CocoDataset):
 
     METAINFO = {
         'classes':
-        ('airport', ),
+        ('airport', 'airplane'),
         # palette is a list of color tuples, which is used for visualization.
         'palette':
-        [(220, 20, 60)]
+        [(220, 20, 60), (119, 11, 32)]
     }
     COCOAPI = COCO
     # ann_id is unique in coco dataset.
     ANN_ID_UNIQUE = True
+
+    def __init__(self,
+                 *args,
+                 seg_prefix: Optional[str] = None,
+                 abu_prefix: Optional[str] = None,
+                 **kwargs) -> None:
+        self.seg_prefix = seg_prefix
+        self.abu_prefix = abu_prefix
+        super().__init__(*args, **kwargs)
+
+    def _join_prefix(self):
+        """Join ``self.data_root`` with ``self.data_prefix`` and
+        ``self.ann_file``.
+
+        Examples:
+            >>> # self.data_prefix contains relative paths
+            >>> self.data_root = 'a/b/c'
+            >>> self.data_prefix = dict(img='d/e/')
+            >>> self.ann_file = 'f'
+            >>> self._join_prefix()
+            >>> self.data_prefix
+            dict(img='a/b/c/d/e')
+            >>> self.ann_file
+            'a/b/c/f'
+            >>> # self.data_prefix contains absolute paths
+            >>> self.data_root = 'a/b/c'
+            >>> self.data_prefix = dict(img='/d/e/')
+            >>> self.ann_file = 'f'
+            >>> self._join_prefix()
+            >>> self.data_prefix
+            dict(img='/d/e')
+            >>> self.ann_file
+            'a/b/c/f'
+        """
+        # Automatically join annotation file path with `self.root` if
+        # `self.ann_file` is not an absolute path.
+        if not is_abs(self.ann_file) and self.ann_file:
+            self.ann_file = osp.join(self.data_root, self.ann_file)
+        # Automatically join data directory with `self.root` if path value in
+        # `self.data_prefix` is not an absolute path.
+        for data_key, prefix in self.data_prefix.items():
+            if isinstance(prefix, str):
+                if not is_abs(prefix):
+                    self.data_prefix[data_key] = osp.join(
+                        self.data_root, prefix)
+                else:
+                    self.data_prefix[data_key] = prefix
+            else:
+                raise TypeError('prefix should be a string, but got '
+                                f'{type(prefix)}')
+        if self.seg_prefix is not None:
+            for data_key, prefix in self.seg_prefix.items():
+                if isinstance(prefix, str):
+                    if not is_abs(prefix):
+                        self.seg_prefix[data_key] = osp.join(
+                            self.data_root, prefix)
+                    else:
+                        self.seg_prefix[data_key] = prefix
+                else:
+                    raise TypeError('prefix should be a string, but got '
+                                    f'{type(prefix)}')
+        if self.abu_prefix is not None:
+            for data_key, prefix in self.abu_prefix.items():
+                if isinstance(prefix, str):
+                    if not is_abs(prefix):
+                        self.abu_prefix[data_key] = osp.join(
+                            self.data_root, prefix)
+                    else:
+                        self.abu_prefix[data_key] = prefix
+                else:
+                    raise TypeError('prefix should be a string, but got '
+                                    f'{type(prefix)}')
+
 
     def load_data_list(self) -> List[dict]:
         """Load annotations from an annotation file named as ``self.ann_file``
@@ -93,11 +166,24 @@ class IRAirDataset(CocoDataset):
                 img_info['file_name'].rsplit('.', 1)[0] + self.seg_map_suffix)
         else:
             seg_map_path = None
+
+        if self.seg_prefix is not None:
+            seg_path = osp.join(self.seg_prefix['img'], img_info['file_name'])
+        else:
+            seg_path = None
+        if self.abu_prefix is not None:
+            abu_path = osp.join(self.abu_prefix['img'], img_info['file_name'])
+        else:
+            abu_path = None
+
         data_info['img_path'] = img_path
         data_info['img_id'] = img_info['img_id']
         data_info['seg_map_path'] = seg_map_path
         data_info['height'] = img_info['height']
         data_info['width'] = img_info['width']
+        data_info['seg_path'] = seg_path
+        data_info['abu_path'] = abu_path
+
         instances = []
         for i, ann in enumerate(ann_info):
             instance = {}
@@ -124,7 +210,10 @@ class IRAirDataset(CocoDataset):
 
             if ann.get('segmentation', None):
                 instance['mask'] = ann['segmentation']
-
+            if ann.get('true_center', None) is not None:
+                instance['true_center'] = ann['true_center']
+            if ann.get('forward_frame', None) is not None:
+                instance['frame_id'] = ann['forward_frame']
             instances.append(instance)
         data_info['instances'] = instances
         return data_info

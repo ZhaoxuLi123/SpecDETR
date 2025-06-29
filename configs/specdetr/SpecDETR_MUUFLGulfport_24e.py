@@ -1,11 +1,12 @@
 _base_ = [
-    './_base_/datasets/hsi_detection.py', './_base_/default_runtime.py'
+    '../_base_/datasets/hsi_detection_MUUFLGulfport.py', '../_base_/default_runtime.py'
 ]
 
 # fp16 = dict(loss_scale=512.)
+# pretrained = 'https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_large_patch4_window12_384_22k.pth'  # noqa
 norm = 'LN'  #'IN1d' 'LN''BN1d'
 num_levels = 2
-in_channels = 30
+in_channels = 72
 embed_dims = 256  # embed_dims256
 query_initial = 'one'
 model = dict(
@@ -20,15 +21,16 @@ model = dict(
     scale_gt_bboxes_size = 0,  # [0,0.5)  0.25,
     training_dn = True,  #  use dn when training
     # dn_only_pos = False,
-    dn_type = 'CDN',  # DN CDNV1 CDN
-    query_initial = query_initial,
-    remove_last_candidate = True,  # when the last feacture size of backbone is 1
+    dn_type='CDN',  # DN CDNV1 CDN
+    query_initial= query_initial,
+    remove_last_candidate = False,  # when the last feacture size of backbone is 1
     data_preprocessor=dict(
         type='HSIDetDataPreprocessor'),
     backbone=dict(
         type='No_backbone_ST',
         in_channels=in_channels,
         embed_dims=embed_dims,
+        patch_size=(1,),
         # Please only add indices that would be used
         # in FPN, otherwise some parameter will not be used
         num_levels=num_levels,
@@ -37,7 +39,7 @@ model = dict(
     encoder=dict(
         num_layers=6,
         layer_cfg=dict(
-            self_attn_cfg=dict(embed_dims=embed_dims, num_levels=num_levels, num_points=4,
+            self_attn_cfg=dict(embed_dims=embed_dims, num_levels=num_levels, num_points=4, # local_attn_type ='fix_same_orientation',
                                dropout=0.0),  # 0.1 for DeformDETR
             ffn_cfg=dict(
                 embed_dims=embed_dims,
@@ -50,7 +52,7 @@ model = dict(
         layer_cfg=dict(
             self_attn_cfg=dict(embed_dims=embed_dims, num_heads=8,
                                dropout=0.0),  # 0.1 for DeformDETR
-            cross_attn_cfg=dict(embed_dims=embed_dims, num_levels=num_levels, num_points=4,
+            cross_attn_cfg=dict(embed_dims=embed_dims, num_levels=num_levels, num_points=4, #local_attn_type = 'fix_same_orientation',  # fix_same_orientation
                                 dropout=0.0),  # 0.1 for DeformDETR
             ffn_cfg=dict(
                 embed_dims=embed_dims,
@@ -65,12 +67,11 @@ model = dict(
         temperature=20),  # 10000 for DeformDETR
     bbox_head=dict(
         type='SpecDetrHead',
-        num_classes=8,
+        num_classes=4,
         sync_cls_avg_factor=True,
-        pre_bboxes_round = False,
-        use_nms = True,
+        pre_bboxes_round = True,
+        use_nms=True,
         iou_threshold = 0.01,
-        embed_dims = embed_dims,
         # neg_cls = True,
         loss_cls=dict(
             type='FocalLoss',
@@ -91,6 +92,35 @@ model = dict(
         #                num_dn_queries=None),
             ),  # TODO: half num_dn_queries
     # training and testing settings
+    # train_cfg=dict(
+    #     assigner=dict(
+    #         type='MaxIoUAssigner',
+    #         pos_iou_thr=0.5,
+    #         neg_iou_thr=0.5,
+    #         min_pos_iou=0.5,
+    #         match_low_quality=False,
+    #         ignore_iof_thr=-1),),
+    # train_cfg=dict(
+    #     assigner=dict(
+    #         type='MaxIoUAssigner',
+    #         pos_iou_thr=0.05,
+    #         neg_iou_thr=0.05,
+    #         min_pos_iou=0.05,
+    #         match_low_quality=True,
+    #         ignore_iof_thr=-1), ),
+    # train_cfg=dict(
+    #     assigner=dict(
+    #         type='MixHungarianIouAssigner',
+    #         match_costs=[
+    #             dict(type='FocalLossCost', weight=2.0),
+    #             dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
+    #             dict(type='IoUCost', iou_mode='giou', weight=2.0),
+    #             dict(type='IoULossCost', iou_mode='iou', weight=1.0)
+    #         ],
+    #         match_num=1,  # 1 5
+    #         base_match_num=1,
+    #         iou_th=0.99,
+    #         dynamic_match=True)),
     train_cfg=dict(
         assigner=dict(
             type='DynamicIOUHungarianAssigner',
@@ -104,6 +134,20 @@ model = dict(
             base_match_num=1,
             iou_loss_th=0.05,
             dynamic_match=True)),
+    # train_cfg=dict(
+    #     assigner=dict(
+    #         type='DynamicHungarianAssigner',
+    #         match_costs=[
+    #             dict(type='FocalLossCost', weight=2.0),
+    #             dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
+    #             dict(type='IoUCost', iou_mode='giou', weight=2.0)
+    #         ],
+    #         anomaly_factor=4,
+    #         match_num=5,  # 1 5
+    #         base_anomaly_factor=-1,
+    #         base_match_num=1,
+    #         normal_outlier=True,
+    #         dynamic_match=True)),
 
     test_cfg=dict(max_per_img=300))  # 100 for DeformDETR
 
@@ -120,9 +164,9 @@ optim_wrapper = dict(
 )  # custom_keys contains sampling_offsets and reference_points in DeformDETR  # noqa
 
 # learning policy
-max_epochs = 100
+max_epochs = 24
 train_cfg = dict(
-    type='EpochBasedTrainLoop', max_epochs=max_epochs, val_interval=20,)
+    type='EpochBasedTrainLoop', max_epochs=max_epochs, val_interval=12)
 
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
@@ -133,10 +177,24 @@ param_scheduler = [
         begin=0,
         end=max_epochs,
         by_epoch=True,
-        milestones=[90],
+        milestones=[20],
         gamma=0.1)
 ]
 
+default_hooks = dict(
+    checkpoint=dict(
+        type='CheckpointHook',
+        by_epoch=True,
+        save_last=True,
+        max_keep_ckpts=3,
+        interval=12))
+
+# train_dataloader = dict(
+#     batch_size=4,)
+# test_dataloader = dict(
+#     batch_size=4,)
+#
 # # NOTE: `auto_scale_lr` is for automatically scaling LR,
 # # USER SHOULD NOT CHANGE ITS VALUES.
+# # base_batch_size = (8 GPUs) x (2 samples per GPU)
 auto_scale_lr = dict(base_batch_size=4)

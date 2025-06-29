@@ -14,8 +14,8 @@ from mmdet.utils.benchmark import (DataLoaderBenchmark, DatasetBenchmark,
 
 def parse_args():
     parser = argparse.ArgumentParser(description='MMDet benchmark')
-    parser.add_argument('--config',default='./configs/specdetr_sb-2s-100e_hsi.py',help='test config file path')
-    parser.add_argument('--checkpoint',default='./work_dirs/SpecDETR/SpecDETR_100e.pth', help='checkpoint file')
+    parser.add_argument('--config',default='./configs/SpecDETR_SPOD_100e.py',help='test config file path')
+    parser.add_argument('--checkpoint',default='./work_dirs/SpecDETR/SpecDETR_SPOD_100e.pth', help='checkpoint file')
     parser.add_argument(
         '--task',
         choices=['inference', 'dataloader', 'dataset'],

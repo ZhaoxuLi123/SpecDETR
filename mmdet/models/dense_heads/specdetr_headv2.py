@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import Linear
-from mmcv.ops.nms import nms, batched_nms
+from mmcv.ops.nms import nms
 from mmengine.model import bias_init_with_prob, constant_init
 from mmengine.structures import InstanceData
 
@@ -25,10 +25,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Transformer
 import numpy as np
-
+# def adjust_bbox_to_pixel(bboxes: Tensor):
+#     # 向下取整得到目标的左上角坐标
+#     adjusted_bboxes = torch.floor(bboxes)
+#     # 向上取整得到目标的右下角坐标
+#     adjusted_bboxes[:, 2:] = torch.ceil(bboxes[:, 2:])
+#     return adjusted_bboxes
 
 
 def adjust_bbox_to_pixel(bboxes: Tensor):
+    # 四舍五入取整坐标
     adjusted_bboxes = torch.round(bboxes)
     return adjusted_bboxes
 
@@ -54,8 +60,6 @@ class SpecDetrHead(DETRHead):
                  dn_only_pos: bool = False,
                  dn_loss_weight: List[float] = [1, 1, 1],  # [1,1,1]
                  iou_threshold: float = 0.01,
-                 class_wise_nms: bool = False,
-                 two_stage_training: bool = False,
                  # use_nms : bool = True,
                  **kwargs) -> None:
         self.share_pred_layer = share_pred_layer
@@ -67,9 +71,6 @@ class SpecDetrHead(DETRHead):
         self.dn_only_pos = dn_only_pos
         self.dn_loss_weight = dn_loss_weight
         self.iou_threshold = iou_threshold
-        self.class_wise_nms = class_wise_nms
-        self.two_stage_training = two_stage_training
-        self.two_stage_training_staring =False
         super().__init__(*args, **kwargs)
         # self.use_nms = use_nms
 
@@ -340,12 +341,13 @@ class SpecDetrHead(DETRHead):
             self.split_outputs(
                 all_layers_cls_scores, all_layers_bbox_preds, dn_meta)
 
-        if all_layers_matching_cls_scores.numel() > 0 and (not self.two_stage_training):  # for dnd
+        if all_layers_matching_cls_scores.numel() >0:  # for dnd
             loss_dict = super().loss_by_feat(
                 all_layers_matching_cls_scores, all_layers_matching_bbox_preds,
                 batch_gt_instances, batch_img_metas, batch_gt_instances_ignore)
         else:
             loss_dict = dict()
+
         # # NOTE DETRHead.loss_by_feat but not DeformableDETRHead.loss_by_feat
         # # is called, because the encoder loss calculations are different
         # # between DINO and DeformableDETR.
@@ -360,35 +362,25 @@ class SpecDetrHead(DETRHead):
                     batch_gt_instances=batch_gt_instances,
                     batch_img_metas=batch_img_metas)
             loss_dict['enc_loss_cls'] = enc_loss_cls
-            if loss_dict['enc_loss_cls'] < 0.2:
-                self.two_stage_training_staring = True
-            if (not self.two_stage_training) or (self.two_stage_training_staring and loss_dict['enc_loss_cls'] < 0.4):
-                loss_dict['enc_loss_bbox'] = enc_losses_bbox
-                loss_dict['enc_loss_iou'] = enc_losses_iou
-            if self.two_stage_training:
-                if self.two_stage_training_staring and loss_dict['enc_loss_cls'] < 0.4:
-                    match_loss_dict = super().loss_by_feat(
-                        all_layers_matching_cls_scores, all_layers_matching_bbox_preds,
-                        batch_gt_instances, batch_img_metas, batch_gt_instances_ignore)
-                    loss_dict.update(match_loss_dict)
-        if all_layers_denoising_cls_scores is not None:
-            if (not self.two_stage_training) or (self.two_stage_training_staring and loss_dict['enc_loss_cls'] < 0.4):
-                dn_losses_cls, dn_losses_bbox, dn_losses_iou = self.loss_dn(
-                    all_layers_denoising_cls_scores,
-                    all_layers_denoising_bbox_preds,
-                    batch_gt_instances=batch_gt_instances,
-                    batch_img_metas=batch_img_metas,
-                    dn_meta=dn_meta)
-                loss_dict['dn_loss_cls'] = dn_losses_cls[-1]
-                loss_dict['dn_loss_bbox'] = dn_losses_bbox[-1]
-                loss_dict['dn_loss_iou'] = dn_losses_iou[-1]
-                for num_dec_layer, (loss_cls_i, loss_bbox_i, loss_iou_i) in \
-                        enumerate(zip(dn_losses_cls[:-1], dn_losses_bbox[:-1],
-                                      dn_losses_iou[:-1])):
-                    loss_dict[f'd{num_dec_layer}.dn_loss_cls'] = loss_cls_i
-                    loss_dict[f'd{num_dec_layer}.dn_loss_bbox'] = loss_bbox_i
-                    loss_dict[f'd{num_dec_layer}.dn_loss_iou'] = loss_iou_i
+            loss_dict['enc_loss_bbox'] = enc_losses_bbox
+            loss_dict['enc_loss_iou'] = enc_losses_iou
 
+        if all_layers_denoising_cls_scores is not None:
+            dn_losses_cls, dn_losses_bbox, dn_losses_iou = self.loss_dn(
+                all_layers_denoising_cls_scores,
+                all_layers_denoising_bbox_preds,
+                batch_gt_instances=batch_gt_instances,
+                batch_img_metas=batch_img_metas,
+                dn_meta=dn_meta)
+            loss_dict['dn_loss_cls'] = dn_losses_cls[-1]
+            loss_dict['dn_loss_bbox'] = dn_losses_bbox[-1]
+            loss_dict['dn_loss_iou'] = dn_losses_iou[-1]
+            for num_dec_layer, (loss_cls_i, loss_bbox_i, loss_iou_i) in \
+                    enumerate(zip(dn_losses_cls[:-1], dn_losses_bbox[:-1],
+                                  dn_losses_iou[:-1])):
+                loss_dict[f'd{num_dec_layer}.dn_loss_cls'] = loss_cls_i
+                loss_dict[f'd{num_dec_layer}.dn_loss_bbox'] = loss_bbox_i
+                loss_dict[f'd{num_dec_layer}.dn_loss_iou'] = loss_iou_i
 
         # a = 0
         # b = 1
@@ -888,26 +880,15 @@ class SpecDetrHead(DETRHead):
         det_bboxes[:, 1::2].clamp_(min=0, max=img_shape[0])
 
         if self.use_nms:
-            if self.class_wise_nms:
-                if det_labels.numel() > 0:
-                    bboxes_scores, keep = batched_nms(det_bboxes, scores.contiguous(), det_labels,  dict(type='nms', iou_threshold=0.01, ),
-                                                      class_agnostic=(not self.class_wise_nms))
-                    if keep.numel() > max_per_img:
-                        bboxes_scores = bboxes_scores[:max_per_img]
-                        det_labels = det_labels[keep][:max_per_img]
-                    else:
-                        det_labels = det_labels[keep]
-                    det_bboxes = bboxes_scores[:, :-1]
-                    scores = bboxes_scores[:, -1]
-            else:
-                iou_threshold = self.iou_threshold
-                offset = 0
-                score_threshold = 0.0  # torch.mean(cls_score.view(-1))+3*torch.std(cls_score.view(-1))
-                # max_num = 300
-                dets, inds = nms(det_bboxes, scores, iou_threshold, offset, score_threshold)
-                det_bboxes = dets[:, :-1]
-                scores = dets[:, -1]
-                det_labels = det_labels[inds]
+            iou_threshold = self.iou_threshold
+            offset = 0
+            score_threshold = 0.0  # torch.mean(cls_score.view(-1))+3*torch.std(cls_score.view(-1))
+
+            # max_num = 300
+            dets, inds = nms(det_bboxes, scores, iou_threshold, offset, score_threshold)
+            det_bboxes = dets[:, :-1]
+            scores = dets[:, -1]
+            det_labels = det_labels[inds]
 
         # add by lzx
         if self.pre_bboxes_round:

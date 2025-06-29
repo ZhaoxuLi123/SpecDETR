@@ -21,7 +21,7 @@ from .hsi.hsi_load import LoadHyperspectralImageFromFiles, LoadHyperspectralMask
 from .hsi.sirst_load import LoadSIRSTImageFromFiles
 from .hsi.hsi_resize import HSIResize, ResizePiexlTarget
 from .hsi.hsi_flip import RandomFlipPiexlTarget
-from .hsi.irfly_load import LoadIRFlyImageFromFiles
+from .hsi.irair_load import LoadIRAirImageFromFiles
 from .hsi.hsi_formatting import PackDetInputsPiexlTarget
 from .wrappers import MultiBranch, ProposalBroadcaster, RandomOrder
 
@@ -40,6 +40,6 @@ __all__ = [
     'LoadEmptyAnnotations', 'RandomOrder', 'CachedMosaic', 'CachedMixUp',
     'FixShapeResize', 'ProposalBroadcaster', 'InferencerLoader',
     'LoadHyperspectralImageFromFiles', 'HSIResize', 'LoadHyperspectralMaskImageFromFiles', 'LoadSIRSTImageFromFiles',
-    'LoadIRFlyImageFromFiles', 'LoadAnnotationsPiexlTarget', 'ResizePiexlTarget', 'RandomFlipPiexlTarget',
+    'LoadIRAirImageFromFiles', 'LoadAnnotationsPiexlTarget', 'ResizePiexlTarget', 'RandomFlipPiexlTarget',
     'PackDetInputsPiexlTarget'
 ]

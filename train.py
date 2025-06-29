@@ -3,7 +3,7 @@ import argparse
 import logging
 import os
 import os.path as osp
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 from mmengine.config import Config, DictAction
 from mmengine.logging import print_log
 from mmengine.registry import RUNNERS
@@ -12,7 +12,6 @@ from mmdet.utils import setup_cache_size_limit_of_dynamo
 import torch
 import random
 import numpy as np
-
 
 def set_random_seed(seed=42, deterministic=False):
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -25,13 +24,26 @@ def set_random_seed(seed=42, deterministic=False):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-
-
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train a detec tor')
-    parser.add_argument('--config',default='./configs/specdetr_sb-2s-100e_hsi.py', help='train config file path')
-    # parser.add_argument('config', help='train config file path')
-    parser.add_argument('--work-dir',default='./work_dirs/SpecDETR', help='the dir to save logs and models')
+    parser = argparse.ArgumentParser(description='Train a detector')
+    parser.add_argument('--dataset', default='SPOD',  help='choose dataset, Avon SPOD Sandiego MUUFLGulfport IRAir')
+    if parser.parse_args().dataset == 'SPOD':
+        parser.add_argument('--config', default='./configs/specdetr/SpecDETR_SPOD_100e.py', help='train config file path')
+        parser.add_argument('--work-dir', default='./work_dirs/SpecDETR/SPOD/', help='the dir to save logs and models')
+    elif parser.parse_args().dataset == 'Sandiego':
+        parser.add_argument('--config', default='./configs/specdetr/SpecDETR_Sandiego_12e.py', help='train config file path')
+        parser.add_argument('--work-dir', default='./work_dirs/SpecDETR/Sandiego/', help='the dir to save logs and models')
+    elif parser.parse_args().dataset == 'Avon':
+        parser.add_argument('--config', default='./configs/specdetr/SpecDETR_Avon_36e.py', help='train config file path')
+        parser.add_argument('--work-dir', default='./work_dirs/SpecDETR/Avon/', help='the dir to save logs and models')
+    elif parser.parse_args().dataset == 'MUUFLGulfport':
+        parser.add_argument('--config', default='./configs/specdetr/SpecDETR_MUUFLGulfport_24e.py', help='train config file path')
+        parser.add_argument('--work-dir', default='./work_dirs/SpecDETR/MUUFLGulfport/', help='the dir to save logs and models')
+    elif parser.parse_args().dataset == 'IRAir':
+        parser.add_argument('--config', default='./configs/specdetr/SpecDETR_IRAir_12e.py', help='train config file path')
+        parser.add_argument('--work-dir', default='./work_dirs/SpecDETR/IRAir/', help='the dir to save logs and models')
+    else:
+        raise ValueError("Invalid dataset. Please ensure the dataset is Avon, SPOD, Sandiego or  MUUFLGulfport.")
     parser.add_argument(
         '--amp',
         action='store_true',

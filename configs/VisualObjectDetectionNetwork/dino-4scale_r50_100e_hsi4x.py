@@ -1,13 +1,8 @@
 _base_ = [
-    './datasets/hsi_detection4x.py', '../_base_/default_runtime.py'
-    # './datasets/hsi_detection.py', '../_base_/default_runtime.py'
+    './datasets/hsi_detection4x.py', './_base_/default_runtime.py'
 ]
 
-fp16 = dict(loss_scale=512.)
-# pretrained = 'https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_large_patch4_window12_384_22k.pth'  # noqa
 
-pretrained = 'https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_large_patch4_window12_384_22kto1k-0a40944b.pth'
-num_levels = 5
 in_channels = 30
 
 model = dict(
@@ -15,44 +10,33 @@ model = dict(
     num_queries=900,  # num_matching_queries 900
     with_box_refine=True,
     as_two_stage=True,
-    num_feature_levels=num_levels,
     data_preprocessor=dict(
         type='HSIDetDataPreprocessor',
         pad_size_divisor=1),
     backbone=dict(
-        type='SwinTransformer',
-        pretrain_img_size=384,
+        type='ResNet',
         in_channels=in_channels,
-        embed_dims=192,
-        depths=[2, 2, 18, 2],
-        num_heads=[6, 12, 24, 48],
-        window_size=12,
-        mlp_ratio=4,
-        qkv_bias=True,
-        qk_scale=None,
-        drop_rate=0.,
-        attn_drop_rate=0.,
-        drop_path_rate=0.2,
-        patch_norm=True,
-        out_indices=(0, 1, 2, 3),
-        # Please only add indices that would be used
-        # in FPN, otherwise some parameter will not be used
-        with_cp=True,
-        convert_weights=True,
-        init_cfg=dict(type='Pretrained', checkpoint=pretrained)
+        depth=50,
+        num_stages=4,
+        out_indices=(1, 2, 3),
+        frozen_stages=-1,
+        norm_cfg=dict(type='BN', requires_grad=False),
+        norm_eval=True,
+        style='pytorch',
+        init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50')
     ),
     neck=dict(
         type='ChannelMapper',
-        in_channels=[192, 384, 768, 1536],
+        in_channels=[512, 1024, 2048],
         kernel_size=1,
         out_channels=256,
         act_cfg=None,
         norm_cfg=dict(type='GN', num_groups=32),
-        num_outs=num_levels),
+        num_outs=4),
     encoder=dict(
         num_layers=6,
         layer_cfg=dict(
-            self_attn_cfg=dict(embed_dims=256, num_levels=num_levels,
+            self_attn_cfg=dict(embed_dims=256, num_levels=4,
                                dropout=0.0),  # 0.1 for DeformDETR
             ffn_cfg=dict(
                 embed_dims=256,
@@ -64,7 +48,7 @@ model = dict(
         layer_cfg=dict(
             self_attn_cfg=dict(embed_dims=256, num_heads=8,
                                dropout=0.0),  # 0.1 for DeformDETR
-            cross_attn_cfg=dict(embed_dims=256, num_levels=num_levels,
+            cross_attn_cfg=dict(embed_dims=256, num_levels=4,
                                 dropout=0.0),  # 0.1 for DeformDETR
             ffn_cfg=dict(
                 embed_dims=256,
@@ -117,23 +101,23 @@ optim_wrapper = dict(
 )  # custom_keys contains sampling_offsets and reference_points in DeformDETR  # noqa
 
 # learning policy
-max_epochs = 12
-train_cfg = dict(
-    type='EpochBasedTrainLoop', max_epochs=max_epochs, val_interval=12)
 
+
+
+max_epochs = 100
+train_cfg = dict(
+    type='EpochBasedTrainLoop', max_epochs=max_epochs, val_interval=20)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
-
 param_scheduler = [
     dict(
         type='MultiStepLR',
         begin=0,
         end=max_epochs,
         by_epoch=True,
-        milestones=[11],
+        milestones=[90],
         gamma=0.1)
 ]
-
 
 
 train_dataloader = dict(

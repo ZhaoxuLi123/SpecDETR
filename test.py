@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import argparse
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import os.path as osp
 import warnings
 from copy import deepcopy
@@ -20,18 +20,74 @@ from mmdet.utils import setup_cache_size_limit_of_dynamo
 def parse_args():
     parser = argparse.ArgumentParser(
         description='MMDet test (and eval) a model')
-    parser.add_argument('--config', default='./configs/specdetr_sb-2s-100e_hsi.py',
-                        help='test config file path')
-    parser.add_argument('--checkpoint',
-                        default='./work_dirs/SpecDETR/SpecDETR_100e.pth',
-                        help='checkpoint file')
-    parser.add_argument(
-        '--work-dir',default='./work_dirs/SpecDETR/',
-        help='the directory to save the file containing evaluation metrics')
-    parser.add_argument(
-        '--out',
-        type=str,default='./work_dirs/SpecDETR/result.pkl',
-        help='dump predictions to a pickle file for offline evaluation')
+    parser.add_argument('--dataset', default='SPOD',  help='choose dataset, Avon SPOD Sandiego MUUFLGulfport IRAir')
+    if parser.parse_args().dataset == 'SPOD':
+        parser.add_argument('--config', default='./configs/specdetr/SpecDETR_SPOD_100e.py',
+                            help='test config file path')
+        parser.add_argument('--checkpoint',
+                            default='./work_dirs/SpecDETR/SpecDETR_SPOD_100e.pth',
+                            help='checkpoint file')
+        parser.add_argument(
+            '--work-dir',default='./work_dirs/SpecDETR/SPOD',
+            help='the directory to save the file containing evaluation metrics')
+        parser.add_argument(
+            '--out',
+            type=str,default='./work_dirs/SpecDETR/SPOD/SpecDETR.pkl',
+            help='dump predictions to a pickle file for offline evaluation')
+    elif parser.parse_args().dataset == 'Sandiego':
+        parser.add_argument('--config', default='./configs/specdetr/SpecDETR_Sandiego_12e.py',
+                            help='test config file path')
+        parser.add_argument('--checkpoint',
+                            default='./work_dirs/SpecDETR/SpecDETR_Sandiego_12e.pth',
+                            help='checkpoint file')
+        parser.add_argument(
+            '--work-dir',default='./work_dirs/SpecDETR/Sandiego',
+            help='the directory to save the file containing evaluation metrics')
+        parser.add_argument(
+            '--out',
+            type=str,default='./work_dirs/SpecDETR/Sandiego/SpecDETR.pkl',
+            help='dump predictions to a pickle file for offline evaluation')
+    elif parser.parse_args().dataset == 'Avon':
+        parser.add_argument('--config', default='./configs/specdetr/SpecDETR_Avon_36e.py',
+                            help='test config file path')
+        parser.add_argument('--checkpoint',
+                            default='./work_dirs/SpecDETR/SpecDETR_Avon_36e.pth',
+                            help='checkpoint file')
+        parser.add_argument(
+            '--work-dir',default='./work_dirs/SpecDETR/Avon',
+            help='the directory to save the file containing evaluation metrics')
+        parser.add_argument(
+            '--out',
+            type=str,default='./work_dirs/SpecDETR/Avon/SpecDETR.pkl',
+            help='dump predictions to a pickle file for offline evaluation')
+    elif parser.parse_args().dataset == 'MUUFLGulfport':
+        parser.add_argument('--config', default='./configs/specdetr/SpecDETR_MUUFLGulfport_24e.py',
+                            help='test config file path')
+        parser.add_argument('--checkpoint',
+                            default='./work_dirs/SpecDETR/SpecDETR_MUUFLGulfport_24e.pth',
+                            help='checkpoint file')
+        parser.add_argument(
+            '--work-dir',default='./work_dirs/SpecDETR/MUUFLGulfport',
+            help='the directory to save the file containing evaluation metrics')
+        parser.add_argument(
+            '--out',
+            type=str,default='./work_dirs/SpecDETR/MUUFLGulfport/SpecDETR.pkl',
+            help='dump predictions to a pickle file for offline evaluation')
+    elif parser.parse_args().dataset == 'IRAir':
+        parser.add_argument('--config', default='./configs/specdetr/SpecDETR_IRAir_12e.py',
+                            help='test config file path')
+        parser.add_argument('--checkpoint',
+                            default='./work_dirs/SpecDETR/SpecDETR_IRAir_12e.pth',
+                            help='checkpoint file')
+        parser.add_argument(
+            '--work-dir',default='./work_dirs/SpecDETR/IRAir',
+            help='the directory to save the file containing evaluation metrics')
+        parser.add_argument(
+            '--out',
+            type=str,default='./work_dirs/SpecDETR/IRAir/SpecDETR.pkl',
+            help='dump predictions to a pickle file for offline evaluation')
+    else:
+        raise ValueError("Invalid dataset. Please ensure the dataset is Avon, SPOD, Sandiego or  MUUFLGulfport.")
     parser.add_argument(
         '--show', action='store_true', help='show prediction results')
     parser.add_argument(
@@ -68,6 +124,7 @@ def parse_args():
 
 
 def main():
+
     args = parse_args()
 
     # Reduce the number of repeated compilations and improve
@@ -151,3 +208,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
