@@ -119,7 +119,7 @@ For details on adding new HOD datasets, please refer to the `Training and Infere
 
 ### IRAir Dataset
 
-We will release the IRAir dataset soon. Please stay tuned on the project website: [IRAir](https://github.com/ZhaoxuLi123/IRAir)  
+We will release the IRAir dataset soon. Please stay tuned on the project website: [IRAir](https://github.com/TinaLRJ/IRAir-dataset/)  
 
 The IRAir dataset configuration file is located at:  
 [configs/\_base_/datasets/irair_real_label.py](configs/_base_/datasets/irair_real_label.py)  
