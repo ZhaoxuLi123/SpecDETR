@@ -28,7 +28,7 @@ Paper link:  [ISPRS P&RS](https://www.sciencedirect.com/science/article/abs/pii/
 ## News & Updates
 * June 29, 2025: We make the following updates:
     1. Open-source the simulated training sets for three public HTD datasets: Avon, SanDiego, and MUUFLGulfport.
-    2. Add support for the infrared video satellite flying airplane detection dataset [IRAir](https://github.com/ZhaoxuLi123/IRAir).
+    2. Add support for the infrared video satellite flying airplane detection dataset [IRAir](https://github.com/TinaLRJ/IRAir-dataset/).
     3. Provide pre-trained SpecDETR models for hyperspectral tiny object detection on three public datasets (Avon, SanDiego, MUUFLGulfport) and single-frame infrared tiny object detection on IRAir dataset.
     4. Released the companion toolbox [HODToolbox](https://github.com/ZhaoxuLi123/HODToolbox) 
 
